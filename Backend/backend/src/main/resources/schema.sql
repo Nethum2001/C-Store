@@ -4,6 +4,7 @@ DROP TRIGGER IF EXISTS "update_variant" ON "varies_on";
 DROP FUNCTION IF EXISTS "update_variant";
 
 DROP FUNCTION IF EXISTS "rank_category_by_orders";
+DROP FUNCTION IF EXISTS "customer_order_report";
 DROP FUNCTION IF EXISTS "properties_from_product";
 DROP FUNCTION IF EXISTS "count_stocks";
 DROP FUNCTION IF EXISTS "images_from_product";
@@ -228,6 +229,7 @@ CREATE TABLE "cart_item" (
 DROP TABLE IF EXISTS "order";
 CREATE TABLE "order" (
     "order_id"        BIGSERIAL,
+    "customer_id"         BIGINT,
     "date"            TIMESTAMP,
     "total_payment"   NUMERIC (12, 2),
     "payment_method"  VARCHAR (20),
@@ -237,16 +239,17 @@ CREATE TABLE "order" (
     "street_name"     VARCHAR (60),
     "city"            VARCHAR (40),
     "zipcode"         INTEGER,
-    PRIMARY KEY ("order_id")
+    PRIMARY KEY ("order_id"),
+    FOREIGN KEY ("customer_id") REFERENCES "user" ("user_id") ON DELETE NO ACTION
 );
 
 -- Order Contact
 DROP TABLE IF EXISTS "order_contact";
 CREATE TABLE "order_contact" (
-                                 "order_id"         BIGINT,
-                                 "telephone_number" VARCHAR (12),
-                                 PRIMARY KEY ("order_id", "telephone_number"),
-                                 FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE
+     "order_id"         BIGINT,
+     "telephone_number" VARCHAR (12),
+     PRIMARY KEY ("order_id", "telephone_number"),
+     FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE
 );
 
 -- Order Item
@@ -265,6 +268,7 @@ CREATE TABLE "order_item" (
 
 ------------------------------------------------------------------------------------------------------------------------
 -- VIEWS----------------------------------------------------------------------------------------------------------------
+
 
 DROP VIEW IF EXISTS "root_category";
 CREATE VIEW "root_category" AS
@@ -301,15 +305,16 @@ CREATE VIEW "leaf_category" AS
 ------------------------------------------------------------------------------------------------------------------------
 -- PROCEDURES-----------------------------------------------------------------------------------------------------------
 
+
 CREATE OR REPLACE FUNCTION "products_from_category"(c_id BIGINT)
     RETURNS TABLE (
-                      "product_id"   BIGINT,
-                      "product_name" VARCHAR(100),
-                      "base_price"   NUMERIC(10, 2),
-                      "brand"        VARCHAR(40),
-                      "description"  TEXT,
-                      "image_url"    VARCHAR(100)
-                  )
+        "product_id"   BIGINT,
+        "product_name" VARCHAR(100),
+        "base_price"   NUMERIC(10, 2),
+        "brand"        VARCHAR(40),
+        "description"  TEXT,
+        "image_url"    VARCHAR(100)
+    )
 AS $$
 BEGIN
     RETURN QUERY
@@ -402,6 +407,25 @@ $$ LANGUAGE plpgsql;
 
 ------------------------------------------------------------------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION "customer_order_report"(c_id BIGINT)
+    RETURNS TABLE (
+        "order_id"      BIGINT,
+        "date"          TIMESTAMP,
+        "total_payment" NUMERIC (12, 2),
+        "variant_id"    BIGINT,
+        "count"         INTEGER
+    ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT o."order_id", o."date", o."total_payment", oi."variant_id", oi."count"
+        FROM "order" AS o NATURAL LEFT OUTER JOIN "order_item" AS oi
+        WHERE o."customer_id" = c_id;
+END
+$$ LANGUAGE plpgsql;
+
+
+------------------------------------------------------------------------------------------------------------------------
+
 CREATE OR REPLACE FUNCTION "rank_category_by_orders"()
     RETURNS TABLE (
         "category_id"   BIGINT,
@@ -416,6 +440,7 @@ BEGIN
     GROUP BY lc."category_id";
 END
 $$ LANGUAGE plpgsql;
+
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Triggers-------------------------------------------------------------------------------------------------------------
