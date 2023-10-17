@@ -3,7 +3,7 @@
 DROP TRIGGER IF EXISTS "update_variant" ON "varies_on";
 DROP FUNCTION IF EXISTS "update_variant";
 
-DROP FUNCTION IF EXISTS "rank_category_by_orders";
+DROP FUNCTION IF EXISTS rank_categories_by_orders;
 DROP FUNCTION IF EXISTS "customer_order_report";
 DROP FUNCTION IF EXISTS "properties_from_product";
 DROP FUNCTION IF EXISTS "count_stocks";
@@ -14,6 +14,8 @@ DROP FUNCTION IF EXISTS "products_from_category";
 DROP VIEW IF EXISTS "leaf_category";
 DROP VIEW IF EXISTS "root_category";
 
+DROP TABLE IF EXISTS "sales_item";
+DROP TABLE IF EXISTS "sales_report";
 DROP TABLE IF EXISTS "order_item";
 DROP TABLE IF EXISTS "order_contact";
 DROP TABLE IF EXISTS "order";
@@ -68,11 +70,11 @@ CREATE TABLE "image" (
 DROP TABLE IF EXISTS "product";
 CREATE TABLE "product" (
     "product_id"   BIGSERIAL,
-    "product_name" VARCHAR(100),
-    "base_price"   NUMERIC(10, 2) DEFAULT 0,
-    "brand"        VARCHAR(40),
+    "product_name" VARCHAR (100),
+    "base_price"   NUMERIC (10, 2) DEFAULT 0,
+    "brand"        VARCHAR (40),
     "description"  TEXT,
-    "image_url"    VARCHAR(100),
+    "image_url"    VARCHAR (100),
     PRIMARY KEY ("product_id")
 );
 
@@ -265,6 +267,29 @@ CREATE TABLE "order_item" (
     FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id")
 );
 
+-- Sales Report
+DROP TABLE IF EXISTS "sales_report";
+CREATE TABLE "sales_report" (
+    "year"           SMALLINT,
+    "quarter"        CHAR (2) CHECK ("quarter" IN ('Q1', 'Q2', 'Q3', 'Q4')),
+    "total_sales"    INTEGER DEFAULT 0,
+    "total_earnings" NUMERIC (10, 2) DEFAULT 0,
+    PRIMARY KEY ("year", "quarter")
+);
+
+-- Sale
+DROP TABLE IF EXISTS "sales_item";
+CREATE TABLE "sales_item" (
+    "year"       SMALLINT,
+    "quarter"    CHAR (2),
+    "variant_id" BIGINT,
+    "sales"      INTEGER DEFAULT 0,
+    "earnings"   NUMERIC (10, 2) DEFAULT 0,
+    PRIMARY KEY ("year", "quarter", "variant_id"),
+    FOREIGN KEY ("year", "quarter") REFERENCES "sales_report" ("year", "quarter") ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE NO ACTION ON UPDATE NO ACTION
+);
+
 
 ------------------------------------------------------------------------------------------------------------------------
 -- VIEWS----------------------------------------------------------------------------------------------------------------
@@ -303,7 +328,7 @@ CREATE VIEW "leaf_category" AS
 
 
 ------------------------------------------------------------------------------------------------------------------------
--- PROCEDURES-----------------------------------------------------------------------------------------------------------
+-- FUNCTIONS------------------------------------------------------------------------------------------------------------
 
 
 CREATE OR REPLACE FUNCTION "products_from_category"(c_id BIGINT)
@@ -423,10 +448,12 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+-- SELECT *
+-- FROM "customer_order_report"(1);
 
 ------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION "rank_category_by_orders"()
+CREATE OR REPLACE FUNCTION rank_categories_by_orders()
     RETURNS TABLE (
         "category_id"   BIGINT,
         "order_count"   INTEGER
@@ -441,12 +468,15 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
+-- SELECT *
+-- FROM "rank_categories_by_orders"(1);
+
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Triggers-------------------------------------------------------------------------------------------------------------
 
 
-/*CREATE OR REPLACE FUNCTION "default_variant"() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION "default_variant"() RETURNS TRIGGER AS $$
 DECLARE variantId BIGINT;
 BEGIN
     variantId := 0;
@@ -466,7 +496,7 @@ DROP TRIGGER IF EXISTS "default_variant" ON "product";
 CREATE TRIGGER "default_variant"
     AFTER INSERT ON "product"
     FOR EACH ROW
-EXECUTE FUNCTION "default_variant"();*/
+EXECUTE FUNCTION "default_variant"();
 
 ------------------------------------------------------------------------------------------------------------------------
 
