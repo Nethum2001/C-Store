@@ -184,7 +184,7 @@ INSERT INTO "varies_on" ("product_id", "property_id", "variant_id") VALUES
     (1, 1, 1),
     (1, 2, 2),
     (3, 3, 3),
-    (2, 3, 4);
+    (2, NULL, 4);
 
 -- SELECT *
 -- FROM "varies_on";

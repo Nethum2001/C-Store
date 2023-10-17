@@ -3,6 +3,7 @@
 DROP TRIGGER IF EXISTS "update_variant" ON "varies_on";
 DROP FUNCTION IF EXISTS "update_variant";
 
+DROP FUNCTION IF EXISTS "rank_category_by_orders";
 DROP FUNCTION IF EXISTS "properties_from_product";
 DROP FUNCTION IF EXISTS "count_stocks";
 DROP FUNCTION IF EXISTS "images_from_product";
@@ -117,10 +118,11 @@ CREATE TABLE "variant" (
 -- Varies, based on
 DROP TABLE IF EXISTS "varies_on";
 CREATE TABLE "varies_on" (
-    "product_id"  BIGINT,
-    "property_id" BIGINT,
-    "variant_id"  BIGINT,
-    PRIMARY KEY ("product_id","variant_id","property_id"),
+    "varies_on_id" BIGSERIAL,
+    "product_id"   BIGINT,
+    "property_id"  BIGINT,
+    "variant_id"   BIGINT,
+    PRIMARY KEY ("varies_on_id"),
     FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE,
     FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE,
     FOREIGN KEY ("property_id") REFERENCES "property" ("property_id") ON DELETE CASCADE
@@ -366,8 +368,7 @@ CREATE OR REPLACE FUNCTION "properties_from_product"(p_id BIGINT)
         "value"           VARCHAR (40),
         "image_url"       VARCHAR (100),
         "price_increment" NUMERIC (10, 2)
-    )
-AS $$
+    ) AS $$
 BEGIN
     RETURN QUERY
         SELECT pp.*
@@ -399,47 +400,80 @@ $$ LANGUAGE plpgsql;
 
 -- SELECT count_stocks(2);
 
-/*SELECT lc.category_id, COUNT(DISTINCT oi.order_id) AS order_count
-FROM "leaf_category" AS lc
-         NATURAL LEFT OUTER JOIN "belongs_to" AS bt
-         NATURAL LEFT OUTER JOIN "varies_on" AS vo
-         NATURAL LEFT OUTER JOIN "order_item" AS oi
-GROUP BY lc."category_id";*/
+------------------------------------------------------------------------------------------------------------------------
 
+CREATE OR REPLACE FUNCTION "rank_category_by_orders"()
+    RETURNS TABLE (
+        "category_id"   BIGINT,
+        "order_count"   INTEGER
+    ) AS $$
+BEGIN
+    SELECT lc.category_id, COUNT(DISTINCT oi.order_id) AS order_count
+    FROM "leaf_category" AS lc
+        NATURAL LEFT OUTER JOIN "belongs_to" AS bt
+        NATURAL LEFT OUTER JOIN "varies_on" AS vo
+        NATURAL LEFT OUTER JOIN "order_item" AS oi
+    GROUP BY lc."category_id";
+END
+$$ LANGUAGE plpgsql;
 
 ------------------------------------------------------------------------------------------------------------------------
 -- Triggers-------------------------------------------------------------------------------------------------------------
 
 
-CREATE OR REPLACE FUNCTION "update_variant"() RETURNS TRIGGER AS $$
-DECLARE product_price NUMERIC(10, 2);
-DECLARE property_price NUMERIC(10, 2);
-DECLARE variant_price NUMERIC(10, 2);
+/*CREATE OR REPLACE FUNCTION "default_variant"() RETURNS TRIGGER AS $$
+DECLARE variantId BIGINT;
 BEGIN
-    product_price := 0;
-    property_price := 0;
-    variant_price := 0;
+    variantId := 0;
 
-    SELECT "price" INTO variant_price
+    INSERT INTO "variant" ("price")
+    VALUES (NEW."base_price")
+    RETURNING "variant_id" INTO variantId;
+
+    INSERT INTO "varies_on" ("product_id", "variant_id")
+    VALUES (NEW."product_id", variantId);
+
+    RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS "default_variant" ON "product";
+CREATE TRIGGER "default_variant"
+    AFTER INSERT ON "product"
+    FOR EACH ROW
+EXECUTE FUNCTION "default_variant"();*/
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "update_variant"() RETURNS TRIGGER AS $$
+DECLARE productPrice NUMERIC (10, 2);
+DECLARE propertyPrice NUMERIC (10, 2);
+DECLARE variantPrice NUMERIC (10, 2);
+BEGIN
+    productPrice := 0;
+    propertyPrice := 0;
+    variantPrice := 0;
+
+    SELECT "price" INTO variantPrice
     FROM "variant"
     WHERE "variant_id" = NEW."variant_id";
 
-    IF variant_price = 0 THEN
-        SELECT "base_price" INTO product_price
+    IF variantPrice = 0 THEN
+        SELECT "base_price" INTO productPrice
         FROM "product"
         WHERE "product_id" = NEW."product_id";
 
         UPDATE "variant"
-        SET "price" = product_price
+        SET "price" = productPrice
         WHERE "variant_id" = NEW."variant_id";
     END IF;
 
-    SELECT "price_increment" INTO property_price
+    SELECT "price_increment" INTO propertyPrice
     FROM "property"
     WHERE "property_id" = NEW."property_id";
 
     UPDATE "variant"
-    SET "price" = "price" + property_price
+    SET "price" = "price" + propertyPrice
     WHERE "variant_id" = NEW."variant_id";
 
     RETURN NEW;
