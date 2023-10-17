@@ -3,7 +3,9 @@
 DROP TRIGGER IF EXISTS "update_variant" ON "varies_on";
 DROP FUNCTION IF EXISTS "update_variant";
 
-DROP FUNCTION IF EXISTS rank_categories_by_orders;
+DROP FUNCTION IF EXISTS "products_with_most_sales";
+DROP FUNCTION IF EXISTS "quarters_with_most_interest";
+DROP FUNCTION IF EXISTS "rank_categories_by_orders";
 DROP FUNCTION IF EXISTS "customer_order_report";
 DROP FUNCTION IF EXISTS "properties_from_product";
 DROP FUNCTION IF EXISTS "count_stocks";
@@ -331,29 +333,6 @@ CREATE VIEW "leaf_category" AS
 -- FUNCTIONS------------------------------------------------------------------------------------------------------------
 
 
-CREATE OR REPLACE FUNCTION "products_from_category"(c_id BIGINT)
-    RETURNS TABLE (
-        "product_id"   BIGINT,
-        "product_name" VARCHAR(100),
-        "base_price"   NUMERIC(10, 2),
-        "brand"        VARCHAR(40),
-        "description"  TEXT,
-        "image_url"    VARCHAR(100)
-    )
-AS $$
-BEGIN
-    RETURN QUERY
-        SELECT DISTINCT p.*
-        FROM "belongs_to" AS bt NATURAL LEFT OUTER JOIN "product" AS p
-        WHERE bt."category_id" = c_id;
-END
-$$ LANGUAGE plpgsql;
-
--- SELECT *
--- FROM "products_from_category"(4);
-
-------------------------------------------------------------------------------------------------------------------------
-
 CREATE OR REPLACE FUNCTION "categories_from_product"(p_id BIGINT)
     RETURNS TABLE (
         "category_id"          BIGINT,
@@ -370,46 +349,6 @@ $$ LANGUAGE plpgsql;
 
 -- SELECT *
 -- FROM "categories_from_product"(1);
-
-------------------------------------------------------------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION "images_from_product"(p_id BIGINT)
-    RETURNS TABLE (
-        "image_id" BIGINT,
-        "url"      VARCHAR (100)
-    ) AS $$
-BEGIN
-    RETURN QUERY
-        SELECT DISTINCT i.*
-        FROM "image" AS i NATURAL LEFT OUTER JOIN "product_image" AS pi NATURAL LEFT OUTER JOIN "product" AS p
-        WHERE p."product_id" = p_id;
-END
-$$ LANGUAGE plpgsql;
-
--- SELECT *
--- FROM "images_from_product"(1);
-
-------------------------------------------------------------------------------------------------------------------------
-
-CREATE OR REPLACE FUNCTION "properties_from_product"(p_id BIGINT)
-    RETURNS TABLE (
-        "property_id"     BIGINT,
-        "property_name"   VARCHAR (40),
-        "value"           VARCHAR (40),
-        "image_url"       VARCHAR (100),
-        "price_increment" NUMERIC (10, 2)
-    ) AS $$
-BEGIN
-    RETURN QUERY
-        SELECT pp.*
-        FROM "property" AS pp NATURAL LEFT OUTER JOIN "varies_on" AS vo NATURAL LEFT OUTER JOIN "product" AS pd
-        WHERE pd.product_id = p_id
-        ORDER BY pp.property_name;
-END
-$$ LANGUAGE plpgsql;
-
--- SELECT *
--- FROM properties_from_product(1);
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -453,7 +392,114 @@ $$ LANGUAGE plpgsql;
 
 ------------------------------------------------------------------------------------------------------------------------
 
-CREATE OR REPLACE FUNCTION rank_categories_by_orders()
+CREATE OR REPLACE FUNCTION "images_from_product"(p_id BIGINT)
+    RETURNS TABLE (
+                      "image_id" BIGINT,
+                      "url"      VARCHAR (100)
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT DISTINCT i.*
+        FROM "image" AS i NATURAL LEFT OUTER JOIN "product_image" AS pi NATURAL LEFT OUTER JOIN "product" AS p
+        WHERE p."product_id" = p_id;
+END
+$$ LANGUAGE plpgsql;
+
+-- SELECT *
+-- FROM "images_from_product"(1);
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "products_from_category"(c_id BIGINT)
+    RETURNS TABLE (
+        "product_id"   BIGINT,
+        "product_name" VARCHAR(100),
+        "base_price"   NUMERIC(10, 2),
+        "brand"        VARCHAR(40),
+        "description"  TEXT,
+        "image_url"    VARCHAR(100)
+    ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT DISTINCT p.*
+        FROM "belongs_to" AS bt NATURAL LEFT OUTER JOIN "product" AS p
+        WHERE bt."category_id" = c_id;
+END
+$$ LANGUAGE plpgsql;
+
+-- SELECT *
+-- FROM "products_from_category"(4);
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "products_with_most_sales"(y SMALLINT, q CHAR (2))
+    RETURNS TABLE(
+        "product_id"     BIGINT,
+        "total_sales"    INTEGER,
+        "total_earnings" NUMERIC (10, 2)
+    ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT vo."product_id",
+               SUM(si."sales") AS "total_sales",
+               SUM(si."earnings") AS "total_earnings"
+        FROM "varies_on" AS vo NATURAL RIGHT OUTER JOIN "sales_item" si
+        WHERE (si."year", si."quarter") = (y, q)
+        GROUP BY (vo."product_id")
+        ORDER BY ("total_sales", "total_earnings") DESC;
+END
+$$ LANGUAGE plpgsql;
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "properties_from_product"(p_id BIGINT)
+    RETURNS TABLE (
+                      "property_id"     BIGINT,
+                      "property_name"   VARCHAR (40),
+                      "value"           VARCHAR (40),
+                      "image_url"       VARCHAR (100),
+                      "price_increment" NUMERIC (10, 2)
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT pp.*
+        FROM "property" AS pp NATURAL LEFT OUTER JOIN "varies_on" AS vo NATURAL LEFT OUTER JOIN "product" AS pd
+        WHERE pd.product_id = p_id
+        ORDER BY pp.property_name;
+END
+$$ LANGUAGE plpgsql;
+
+-- SELECT *
+-- FROM properties_from_product(1);
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "quarters_with_most_interest"(p_id BIGINT)
+    RETURNS TABLE (
+                      "year"     SMALLINT,
+                      "quarter"  CHAR (2),
+                      "total_sales"    INTEGER,
+                      "total_earnings" NUMERIC(10, 2)
+                  ) AS $$
+BEGIN
+    RETURN QUERY
+        SELECT si."year",
+               si."quarter",
+               SUM(si."sales") AS "total_sales",
+               SUM(si."earnings") AS "total_earnings"
+        FROM "varies_on" AS vo NATURAL RIGHT OUTER JOIN "sales_item" si
+        WHERE vo."product_id" = p_id
+        GROUP BY ("year", "quarter")
+        ORDER BY ("total_sales", "total_earnings") DESC;
+END
+$$ LANGUAGE plpgsql;
+
+-- SELECT *
+-- FROM "time_period_with_most_interest"(1);
+
+------------------------------------------------------------------------------------------------------------------------
+
+CREATE OR REPLACE FUNCTION "rank_categories_by_orders"()
     RETURNS TABLE (
         "category_id"   BIGINT,
         "order_count"   INTEGER
@@ -469,7 +515,7 @@ END
 $$ LANGUAGE plpgsql;
 
 -- SELECT *
--- FROM "rank_categories_by_orders"(1);
+-- FROM "rank_categories_by_orders"();
 
 
 ------------------------------------------------------------------------------------------------------------------------
