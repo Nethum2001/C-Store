@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(path = "api/cart/{user_id}")
 @Tag(name = "Update Cart")
@@ -33,8 +35,8 @@ public class CartUpdatingController {
                 description = "Success",
                 responseCode = "200"
             )
-            },
-            summary = "Adds a variant to the cart."
+        },
+        summary = "Adds a variant to the cart."
     )
     @RequestMapping(method = RequestMethod.GET, path = "/add")
     public Long addVariant(@PathVariable(name = "user_id", required = true) Long userId,
@@ -61,5 +63,13 @@ public class CartUpdatingController {
     public void removeVariant(@PathVariable(name = "user_id", required = true) Long userId,
                               @PathVariable(name = "variant_id", required = true) Long variantId) {
         cartUpdatingService.removeVariant(userId, variantId);
+    }
+
+    @RequestMapping(method = RequestMethod.POST, path = "/refresh")
+    public List<CartRefreshment> refreshCart(
+        @PathVariable(name = "user_id", required = true) Long userId,
+        @RequestBody(required = true) List<CartRefreshment> cartItems
+    ) {
+        return cartUpdatingService.refreshCart(userId, cartItems);
     }
 }

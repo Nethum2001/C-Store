@@ -1,22 +1,20 @@
 package com.cstore.domain.cart.update;
 
 import com.cstore.dao.cart.CartDao;
-import com.cstore.dao.variant.VariantDao;
+import com.cstore.dao.inventory.InventoryDao;
 import com.cstore.dto.CartItem_;
 import com.cstore.exception.NoSuchVariantException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
+@RequiredArgsConstructor
 public class CartUpdatingService {
     private final CartDao cartDao;
-    private final VariantDao variantDao;
-
-    @Autowired
-    public CartUpdatingService(CartDao cartDao, VariantDao variantDao) {
-        this.cartDao = cartDao;
-        this.variantDao = variantDao;
-    }
+    private final InventoryDao inventoryDao;
 
     public Long addVariant(Long userId, CartItem_ cartItem_) {
         return null;
@@ -52,5 +50,22 @@ public class CartUpdatingService {
         if (cartDao.removeFromCart(userId, variantId) != 1) {
             throw new NoSuchVariantException("User with id " + userId + " has no variant of id " + variantId + " in his cart.");
         }
+    }
+
+    public List<CartRefreshment> refreshCart(Long userId, List<CartRefreshment> cartItems) {
+        // TODO: Find if the user's cart contains the variants in CARTITEMS.
+
+        List<CartRefreshment> erroneousCartItems = new ArrayList<>();
+
+        for (CartRefreshment cartRefreshment : cartItems) {
+            Integer availableCount = inventoryDao.findCountByVariantId(cartRefreshment.getVariantId());
+
+            if (availableCount < cartRefreshment.getCount()) {
+                cartRefreshment.setCount(availableCount);
+                erroneousCartItems.add(cartRefreshment);
+            }
+        }
+
+        return erroneousCartItems;
     }
 }
