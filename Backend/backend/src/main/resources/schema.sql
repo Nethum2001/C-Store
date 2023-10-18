@@ -43,253 +43,257 @@ DROP TABLE IF EXISTS "category";
 -- Category
 DROP TABLE IF EXISTS "category";
 CREATE TABLE "category" (
-    "category_id"          BIGSERIAL,
-    "category_name"        VARCHAR (40),
-    "category_description" TEXT,
-    PRIMARY KEY ("category_id")
+                            "category_id"          BIGSERIAL,
+                            "category_name"        VARCHAR (40),
+                            "category_description" VARCHAR,
+                            PRIMARY KEY ("category_id")
 );
 
 -- Sub Category
 DROP TABLE IF EXISTS "sub_category";
 CREATE TABLE "sub_category" (
-    "category_id"     BIGINT,
-    "sub_category_id" BIGINT,
-    CHECK ("category_id" != "sub_category_id"),
-    PRIMARY KEY ("category_id", "sub_category_id"),
-    FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE,
-    FOREIGN KEY ("sub_category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE
+                                "category_id"     BIGINT,
+                                "sub_category_id" BIGINT,
+                                CHECK ("category_id" != "sub_category_id"),
+                                PRIMARY KEY ("category_id", "sub_category_id"),
+                                FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE,
+                                FOREIGN KEY ("sub_category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE
 );
 
 -- Image
 DROP TABLE IF EXISTS "image";
 CREATE TABLE "image" (
-    "image_id" BIGSERIAL,
-    "url"      VARCHAR (100),
-    PRIMARY KEY ("image_id")
+                         "image_id" BIGSERIAL,
+                         "url"      VARCHAR (100),
+                         PRIMARY KEY ("image_id")
 );
 
 -- WholeProduct
 DROP TABLE IF EXISTS "product";
 CREATE TABLE "product" (
-    "product_id"   BIGSERIAL,
-    "product_name" VARCHAR (100),
-    "base_price"   NUMERIC (10, 2) DEFAULT 0,
-    "brand"        VARCHAR (40),
-    "description"  TEXT,
-    "image_url"    VARCHAR (100),
-    PRIMARY KEY ("product_id")
+                           "product_id"   BIGSERIAL,
+                           "product_name" VARCHAR (100),
+                           "base_price"   NUMERIC (10, 2) DEFAULT 0,
+                           "brand"        VARCHAR (40),
+                           "description"  VARCHAR,
+                           "image_url"    VARCHAR (100),
+                           PRIMARY KEY ("product_id")
 );
 
 -- WholeProduct Image
 DROP TABLE IF EXISTS "product_image";
 CREATE TABLE "product_image" (
-    "image_id"   BIGINT,
-    "product_id" BIGINT,
-    PRIMARY KEY ("image_id"),
-    FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE,
-    FOREIGN KEY ("image_id") REFERENCES "image" ("image_id") ON DELETE CASCADE
+                                 "image_id"   BIGINT,
+                                 "product_id" BIGINT,
+                                 PRIMARY KEY ("image_id"),
+                                 FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE,
+                                 FOREIGN KEY ("image_id") REFERENCES "image" ("image_id") ON DELETE CASCADE
 );
 
 -- Belongs to
 DROP TABLE IF EXISTS "belongs_to";
 CREATE TABLE "belongs_to" (
-    "category_id" BIGINT,
-    "product_id"  BIGINT,
-    PRIMARY KEY ("category_id", "product_id"),
-    FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE,
-    FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE
+                              "category_id" BIGINT,
+                              "product_id"  BIGINT,
+                              PRIMARY KEY ("category_id", "product_id"),
+                              FOREIGN KEY ("category_id") REFERENCES "category" ("category_id") ON DELETE CASCADE,
+                              FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE
 );
 
 -- ProductSelectionProperty
 DROP TABLE IF EXISTS "property";
 CREATE TABLE "property" (
-    "property_id"     BIGSERIAL,
-    "property_name"   VARCHAR (40),
-    "value"           VARCHAR (40),
-    "image_url"       VARCHAR (100),
-    "price_increment" NUMERIC (10, 2) DEFAULT 0,
-    PRIMARY KEY ("property_id")
+                            "property_id"     BIGSERIAL,
+                            "property_name"   VARCHAR (40),
+                            "value"           VARCHAR (40),
+                            "image_url"       VARCHAR (100),
+                            "price_increment" NUMERIC (10, 2) DEFAULT 0,
+                            PRIMARY KEY ("property_id")
 );
 
 -- Variant
 DROP TABLE IF EXISTS "variant";
 CREATE TABLE "variant" (
-    "variant_id" BIGSERIAL,
-    "price"      NUMERIC (10, 2) DEFAULT 0,
-    "weight"     NUMERIC (5, 2),
-    PRIMARY KEY ("variant_id")
+                           "variant_id" BIGSERIAL,
+                           "price"      NUMERIC (10, 2) DEFAULT 0,
+                           "weight"     NUMERIC (8, 2),
+                           PRIMARY KEY ("variant_id")
 );
 
 -- Varies, based on
 DROP TABLE IF EXISTS "varies_on";
 CREATE TABLE "varies_on" (
-    "varies_on_id" BIGSERIAL,
-    "product_id"   BIGINT,
-    "property_id"  BIGINT,
-    "variant_id"   BIGINT,
-    PRIMARY KEY ("varies_on_id"),
-    FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE,
-    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE,
-    FOREIGN KEY ("property_id") REFERENCES "property" ("property_id") ON DELETE CASCADE
+                             "varies_on_id" BIGSERIAL,
+                             "product_id"   BIGINT,
+                             "property_id"  BIGINT,
+                             "variant_id"   BIGINT,
+                             PRIMARY KEY ("varies_on_id"),
+                             FOREIGN KEY ("product_id") REFERENCES "product" ("product_id") ON DELETE CASCADE,
+                             FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE,
+                             FOREIGN KEY ("property_id") REFERENCES "property" ("property_id") ON DELETE CASCADE
 );
 
 -- Warehouse
 DROP TABLE IF EXISTS "warehouse";
 CREATE TABLE "warehouse" (
-    "warehouse_id"  BIGSERIAL,
-    "street_number" VARCHAR (10),
-    "street_name"   VARCHAR (60),
-    "city"          VARCHAR (40),
-    "zipcode"       INTEGER,
-    PRIMARY KEY ("warehouse_id")
+                             "warehouse_id"  BIGSERIAL,
+                             "street_number" VARCHAR (10),
+                             "street_name"   VARCHAR (60),
+                             "city"          VARCHAR (40),
+                             "zipcode"       INTEGER,
+                             PRIMARY KEY ("warehouse_id")
 );
 
 -- Warehouse Contact
 DROP TABLE IF EXISTS "warehouse_contact";
 CREATE TABLE "warehouse_contact" (
-    "telephone_number" VARCHAR (12),
-    "warehouse_id"     BIGINT,
-    PRIMARY KEY ("telephone_number"),
-    FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id") ON DELETE CASCADE
+                                     "telephone_number" VARCHAR (12),
+                                     "warehouse_id"     BIGINT,
+                                     PRIMARY KEY ("telephone_number"),
+                                     FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id") ON DELETE CASCADE
 );
 
 -- Inventory
 DROP TABLE IF EXISTS "inventory";
 CREATE TABLE "inventory" (
-    "warehouse_id" BIGINT,
-    "variant_id"   BIGINT,
-    "sku"          VARCHAR(20),
-    "count"        INTEGER,
-    PRIMARY KEY ("warehouse_id", "variant_id"),
-    FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id") ON DELETE CASCADE,
-    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE
+                             "warehouse_id" BIGINT,
+                             "variant_id"   BIGINT,
+                             "sku"          VARCHAR(20),
+                             "count"        INTEGER,
+                             PRIMARY KEY ("warehouse_id", "variant_id"),
+                             FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id") ON DELETE CASCADE,
+                             FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE
 );
 
 -- User
 DROP TABLE IF EXISTS "user";
 CREATE TABLE "user" (
-    "user_id" BIGSERIAL,
-    "role"    VARCHAR (10) CHECK ("role" IN ('GUEST_CUST', 'REG_CUST', 'ADMIN')),
-    PRIMARY KEY ("user_id")
+                        "user_id" BIGSERIAL,
+                        "role"    VARCHAR (10) CHECK ("role" IN ('GUEST_CUST', 'REG_CUST', 'ADMIN')),
+                        PRIMARY KEY ("user_id")
 );
 
 -- Registered User
 DROP TABLE IF EXISTS "registered_user";
 CREATE TABLE "registered_user" (
-    "user_id"     BIGINT,
-    "email"       VARCHAR (60) NOT NULL UNIQUE,
-    "password"    VARCHAR (60) NOT NULL,
-    "first_name"  VARCHAR (20),
-    "last_name"   VARCHAR (20),
-    "locked"      BOOLEAN NOT NULL,
-    "enabled"     BOOLEAN NOT NULL,
-    PRIMARY KEY ("user_id"),
-    FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
+                                   "user_id"     BIGINT,
+                                   "email"       VARCHAR (60) NOT NULL UNIQUE,
+                                   "password"    VARCHAR (60) NOT NULL,
+                                   "first_name"  VARCHAR (20),
+                                   "last_name"   VARCHAR (20),
+                                   "locked"      BOOLEAN NOT NULL,
+                                   "enabled"     BOOLEAN NOT NULL,
+                                   PRIMARY KEY ("user_id"),
+                                   FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
 );
 
 -- User Contact
 DROP TABLE IF EXISTS "user_contact";
 CREATE TABLE "user_contact" (
-    "user_id"          BIGINT,
-    "telephone_number" VARCHAR (12),
-    PRIMARY KEY ("user_id", "telephone_number"),
-    FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
+                                "user_id"          BIGINT,
+                                "telephone_number" VARCHAR (12),
+                                PRIMARY KEY ("user_id", "telephone_number"),
+                                FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
 );
 
 -- User Address
 DROP TABLE IF EXISTS "user_address";
 CREATE TABLE "user_address" (
-    "address_id"    BIGSERIAL,
-    "user_id"       BIGINT,
-    "street_number" VARCHAR (10),
-    "street_name"   VARCHAR (60),
-    "city"          VARCHAR (40),
-    "zipcode"       INTEGER,
-    PRIMARY KEY ("address_id"),
-    FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
+                                "address_id"    BIGSERIAL,
+                                "user_id"       BIGINT,
+                                "street_number" VARCHAR (10),
+                                "street_name"   VARCHAR (60),
+                                "city"          VARCHAR (40),
+                                "zipcode"       INTEGER,
+                                PRIMARY KEY ("address_id"),
+                                FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
 );
 
 -- Cart
 DROP TABLE IF EXISTS "cart";
 CREATE TABLE "cart" (
-    "user_id"     BIGINT,
-    "total_price" NUMERIC (12, 2),
-    PRIMARY KEY ("user_id"),
-    FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
+                        "user_id"     BIGINT,
+                        "total_price" NUMERIC (12, 2),
+                        PRIMARY KEY ("user_id"),
+                        FOREIGN KEY ("user_id") REFERENCES "user" ("user_id") ON DELETE CASCADE
 );
 
 -- Contains
 DROP TABLE IF EXISTS "cart_item";
 CREATE TABLE "cart_item" (
-    "user_id"    BIGINT,
-    "variant_id" BIGINT,
-    "quantity"   INTEGER,
-    PRIMARY KEY ("user_id", "variant_id"),
-    FOREIGN KEY ("user_id") REFERENCES "cart" ("user_id") ON DELETE CASCADE,
-    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE
+                             "user_id"    BIGINT,
+                             "variant_id" BIGINT,
+                             "quantity"   INTEGER,
+                             PRIMARY KEY ("user_id", "variant_id"),
+                             FOREIGN KEY ("user_id") REFERENCES "cart" ("user_id") ON DELETE CASCADE,
+                             FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE CASCADE
 );
 
 -- Order
 DROP TABLE IF EXISTS "order";
 CREATE TABLE "order" (
-    "order_id"        BIGSERIAL,
-    "customer_id"         BIGINT,
-    "date"            TIMESTAMP,
-    "total_payment"   NUMERIC (12, 2),
-    "payment_method"  VARCHAR (20),
-    "delivery_method" VARCHAR (40),
-    "email"           VARCHAR (60),
-    "street_number"   VARCHAR (10),
-    "street_name"     VARCHAR (60),
-    "city"            VARCHAR (40),
-    "zipcode"         INTEGER,
-    PRIMARY KEY ("order_id"),
-    FOREIGN KEY ("customer_id") REFERENCES "user" ("user_id") ON DELETE NO ACTION
+                         "order_id"        BIGSERIAL,
+
+                         "status"          VARCHAR (20) CHECK ("status" IN ('PLACED', 'PROCESSING', 'PROCESSED')),
+
+                         "date"            TIMESTAMP,
+                         "total_payment"   NUMERIC (12, 2),
+                         "payment_method"  VARCHAR (20),
+                         "delivery_method" VARCHAR (40),
+
+                         "customer_id"     BIGINT,
+                         "email"           VARCHAR (60),
+                         "street_number"   VARCHAR (10),
+                         "street_name"     VARCHAR (60),
+                         "city"            VARCHAR (40),
+                         "zipcode"         INTEGER,
+                         PRIMARY KEY ("order_id"),
+                         FOREIGN KEY ("customer_id") REFERENCES "user" ("user_id") ON DELETE NO ACTION
 );
 
 -- Order Contact
 DROP TABLE IF EXISTS "order_contact";
 CREATE TABLE "order_contact" (
-     "order_id"         BIGINT,
-     "telephone_number" VARCHAR (12),
-     PRIMARY KEY ("order_id", "telephone_number"),
-     FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE
+                                 "order_id"         BIGINT,
+                                 "telephone_number" VARCHAR (12),
+                                 PRIMARY KEY ("order_id", "telephone_number"),
+                                 FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE
 );
 
 -- Order Item
 DROP TABLE IF EXISTS "order_item";
 CREATE TABLE "order_item" (
-    "order_id"     BIGINT,
-    "variant_id"   BIGINT,
-    "warehouse_id" BIGINT,
-    "count"        INTEGER,
-    PRIMARY KEY ("order_id", "variant_id", "warehouse_id"),
-    FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE,
-    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id"),
-    FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id")
+                              "order_id"     BIGINT,
+                              "variant_id"   BIGINT,
+                              "warehouse_id" BIGINT,
+                              "count"        INTEGER,
+                              PRIMARY KEY ("order_id", "variant_id", "warehouse_id"),
+                              FOREIGN KEY ("order_id") REFERENCES "order" ("order_id") ON DELETE CASCADE,
+                              FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id"),
+                              FOREIGN KEY ("warehouse_id") REFERENCES "warehouse" ("warehouse_id")
 );
 
 -- Sales Report
 DROP TABLE IF EXISTS "sales_report";
 CREATE TABLE "sales_report" (
-    "year"           SMALLINT,
-    "quarter"        CHAR (2) CHECK ("quarter" IN ('Q1', 'Q2', 'Q3', 'Q4')),
-    "total_sales"    INTEGER DEFAULT 0,
-    "total_earnings" NUMERIC (10, 2) DEFAULT 0,
-    PRIMARY KEY ("year", "quarter")
+                                "year"           SMALLINT,
+                                "quarter"        CHAR (2) CHECK ("quarter" IN ('Q1', 'Q2', 'Q3', 'Q4')),
+                                "total_sales"    INTEGER DEFAULT 0,
+                                "total_earnings" NUMERIC (10, 2) DEFAULT 0,
+                                PRIMARY KEY ("year", "quarter")
 );
 
 -- Sale
 DROP TABLE IF EXISTS "sales_item";
 CREATE TABLE "sales_item" (
-    "year"       SMALLINT,
-    "quarter"    CHAR (2),
-    "variant_id" BIGINT,
-    "sales"      INTEGER DEFAULT 0,
-    "earnings"   NUMERIC (10, 2) DEFAULT 0,
-    PRIMARY KEY ("year", "quarter", "variant_id"),
-    FOREIGN KEY ("year", "quarter") REFERENCES "sales_report" ("year", "quarter") ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE NO ACTION ON UPDATE NO ACTION
+                              "year"       SMALLINT,
+                              "quarter"    CHAR (2),
+                              "variant_id" BIGINT,
+                              "sales"      INTEGER DEFAULT 0,
+                              "earnings"   NUMERIC (10, 2) DEFAULT 0,
+                              PRIMARY KEY ("year", "quarter", "variant_id"),
+                              FOREIGN KEY ("year", "quarter") REFERENCES "sales_report" ("year", "quarter") ON DELETE CASCADE ON UPDATE CASCADE,
+                              FOREIGN KEY ("variant_id") REFERENCES "variant" ("variant_id") ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 
 
@@ -299,10 +303,10 @@ CREATE TABLE "sales_item" (
 
 DROP VIEW IF EXISTS "root_category";
 CREATE VIEW "root_category" AS
-    SELECT *
-    FROM "category"
-    WHERE "category_id" NOT IN (SELECT DISTINCT "sub_category_id"
-                                FROM sub_category);
+SELECT *
+FROM "category"
+WHERE "category_id" NOT IN (SELECT DISTINCT "sub_category_id"
+                            FROM sub_category);
 
 -- SELECT *
 -- FROM "base_category";
@@ -319,11 +323,11 @@ CREATE VIEW "root_category" AS
  */
 DROP VIEW IF EXISTS "leaf_category";
 CREATE VIEW "leaf_category" AS
-    SELECT *
-    FROM "category"
-    WHERE "category_id" IN (SELECT DISTINCT "sub_category_id"
-                            FROM sub_category) AND "category_id" NOT IN (SELECT DISTINCT "category_id"
-                                                                         FROM sub_category);
+SELECT *
+FROM "category"
+WHERE "category_id" IN (SELECT DISTINCT "sub_category_id"
+                        FROM sub_category) AND "category_id" NOT IN (SELECT DISTINCT "category_id"
+                                                                     FROM sub_category);
 
 -- SELECT *
 -- FROM "leaf_category";
@@ -335,10 +339,10 @@ CREATE VIEW "leaf_category" AS
 
 CREATE OR REPLACE FUNCTION "categories_from_product"(p_id BIGINT)
     RETURNS TABLE (
-        "category_id"          BIGINT,
-        "category_name"        VARCHAR (40),
-        "category_description" TEXT
-    ) AS $$
+                      "category_id"          BIGINT,
+                      "category_name"        VARCHAR (40),
+                      "category_description" VARCHAR
+                  ) AS $$
 BEGIN
     RETURN QUERY
         SELECT DISTINCT c.*
@@ -361,7 +365,7 @@ BEGIN
     WHERE vo."product_id" = p_id;
 
     IF stock_count NOTNULL
-        THEN RETURN stock_count;
+    THEN RETURN stock_count;
     ELSE RETURN 0;
     END IF;
 END
@@ -373,12 +377,12 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION "customer_order_report"(c_id BIGINT)
     RETURNS TABLE (
-        "order_id"      BIGINT,
-        "date"          TIMESTAMP,
-        "total_payment" NUMERIC (12, 2),
-        "variant_id"    BIGINT,
-        "count"         INTEGER
-    ) AS $$
+                      "order_id"      BIGINT,
+                      "date"          TIMESTAMP,
+                      "total_payment" NUMERIC (12, 2),
+                      "variant_id"    BIGINT,
+                      "count"         INTEGER
+                  ) AS $$
 BEGIN
     RETURN QUERY
         SELECT o."order_id", o."date", o."total_payment", oi."variant_id", oi."count"
@@ -412,13 +416,13 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION "products_from_category"(c_id BIGINT)
     RETURNS TABLE (
-        "product_id"   BIGINT,
-        "product_name" VARCHAR(100),
-        "base_price"   NUMERIC(10, 2),
-        "brand"        VARCHAR(40),
-        "description"  TEXT,
-        "image_url"    VARCHAR(100)
-    ) AS $$
+                      "product_id"   BIGINT,
+                      "product_name" VARCHAR(100),
+                      "base_price"   NUMERIC(10, 2),
+                      "brand"        VARCHAR(40),
+                      "description"  VARCHAR,
+                      "image_url"    VARCHAR(100)
+                  ) AS $$
 BEGIN
     RETURN QUERY
         SELECT DISTINCT p.*
@@ -434,10 +438,10 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION "products_with_most_sales"(y SMALLINT, q CHAR (2))
     RETURNS TABLE(
-        "product_id"     BIGINT,
-        "total_sales"    INTEGER,
-        "total_earnings" NUMERIC (10, 2)
-    ) AS $$
+                     "product_id"     BIGINT,
+                     "total_sales"    INTEGER,
+                     "total_earnings" NUMERIC (10, 2)
+                 ) AS $$
 BEGIN
     RETURN QUERY
         SELECT vo."product_id",
@@ -501,15 +505,15 @@ $$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION "rank_categories_by_orders"()
     RETURNS TABLE (
-        "category_id"   BIGINT,
-        "order_count"   INTEGER
-    ) AS $$
+                      "category_id"   BIGINT,
+                      "order_count"   INTEGER
+                  ) AS $$
 BEGIN
     SELECT lc.category_id, COUNT(DISTINCT oi.order_id) AS order_count
     FROM "leaf_category" AS lc
-        NATURAL LEFT OUTER JOIN "belongs_to" AS bt
-        NATURAL LEFT OUTER JOIN "varies_on" AS vo
-        NATURAL LEFT OUTER JOIN "order_item" AS oi
+             NATURAL LEFT OUTER JOIN "belongs_to" AS bt
+             NATURAL LEFT OUTER JOIN "varies_on" AS vo
+             NATURAL LEFT OUTER JOIN "order_item" AS oi
     GROUP BY lc."category_id";
 END
 $$ LANGUAGE plpgsql;
@@ -522,34 +526,10 @@ $$ LANGUAGE plpgsql;
 -- Triggers-------------------------------------------------------------------------------------------------------------
 
 
-CREATE OR REPLACE FUNCTION "default_variant"() RETURNS TRIGGER AS $$
-DECLARE variantId BIGINT;
-BEGIN
-    variantId := 0;
-
-    INSERT INTO "variant" ("price")
-    VALUES (NEW."base_price")
-    RETURNING "variant_id" INTO variantId;
-
-    INSERT INTO "varies_on" ("product_id", "variant_id")
-    VALUES (NEW."product_id", variantId);
-
-    RETURN NEW;
-END
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS "default_variant" ON "product";
-CREATE TRIGGER "default_variant"
-    AFTER INSERT ON "product"
-    FOR EACH ROW
-EXECUTE FUNCTION "default_variant"();
-
-------------------------------------------------------------------------------------------------------------------------
-
 CREATE OR REPLACE FUNCTION "update_variant"() RETURNS TRIGGER AS $$
 DECLARE productPrice NUMERIC (10, 2);
-DECLARE propertyPrice NUMERIC (10, 2);
-DECLARE variantPrice NUMERIC (10, 2);
+    DECLARE propertyPrice NUMERIC (10, 2);
+    DECLARE variantPrice NUMERIC (10, 2);
 BEGIN
     productPrice := 0;
     propertyPrice := 0;
